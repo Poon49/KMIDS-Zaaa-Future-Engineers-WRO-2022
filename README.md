@@ -51,8 +51,10 @@ Our car contains the follow parts:
     https://cdn-shop.adafruit.comhttps://cdn-shop.adafruit.com/datasheets/BST_BNO055_DS000_12.pdfdatasheets/BST_BNO055_DS000_12.pdf
     
 7.	Step down 8-35V to 5V 8A 4 USB                                         
-8.	USB  TTL CH340 : Support USB1.1 or USB2.0 communication      
-9.	LIPO Battery  3S  11.1V                           
+8.	USB  TTL CH340 : Support USB1.1 or USB2.0 communication 
+9.	VL53L0X V2 Laser ToF Distance Sensor Module    
+	 ![image](https://user-images.githubusercontent.com/76239146/184903747-060da6ea-be2e-4cfe-b6d0-214a57636298.png)
+11.	LIPO Battery  3S  11.1V                           
  
 ## Modules used:
 Other modules include:
