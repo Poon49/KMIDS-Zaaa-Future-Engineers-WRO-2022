@@ -1,4 +1,10 @@
 # KMIDS-Zaaa-Future-Engineers-WRO-2022
+
+Team members 3 personsfrom KMIDS: King Mongkut's International Demonstration School 
+ 1. Mr.Poonnachote Kaewsuwan
+ 2. Mr.Siradanai Tanlai
+ 3. Mr.Theeradanai Tanlai
+ 
 ## WRO-Future-Engineers 2022
 This repository contains codes and working principle that are used to creating the autonomous vehicle for competition.
 
