@@ -68,16 +68,18 @@ Control direction the autonomous car follow the  mission rule by:
 Area comparation between Wall Left and Wall Right
 If Area-Wall Left > Area-Wall Right --> Control vehicle turn right.
 If Area-Wall Left < Area-Wall Right --> Control vehicle turn left.
-![image](https://user-images.githubusercontent.com/76239146/184882552-e42c2c11-c46d-459e-ab6e-4d84542dd27e.png)
+
+  ![image](https://user-images.githubusercontent.com/76239146/184896556-b1bcc188-0bba-4c3a-8446-c270aa6bee1c.png)
 ### Wall-Left
- ![image](https://user-images.githubusercontent.com/76239146/184883806-733cfb3e-d041-4102-80bf-796b7aa6ac3b.png)
+  ![image](https://user-images.githubusercontent.com/76239146/184896020-20b91076-6f53-4ce1-976e-2736564a153f.png)
 ### Wall-Right
- ![image](https://user-images.githubusercontent.com/76239146/184883878-93aaf87b-e8b1-4b3f-918a-c08aa667a66f.png)
+  ![image](https://user-images.githubusercontent.com/76239146/184896086-cfb69947-0f8c-4368-95e8-a9bfacfc3acf.png)
+  
 ## Lane Detection:
 ### Blue Lane
- ![image](https://user-images.githubusercontent.com/76239146/184884132-66897416-596c-4fc3-b700-76a106cb3cea.png)
+  ![image](https://user-images.githubusercontent.com/76239146/184896153-d1d4d2d9-fb1b-4ae7-8c32-762c9de4eab8.png)
 ### Orange Lane
- ![image](https://user-images.githubusercontent.com/76239146/184884195-418e44e2-54bf-4bb4-90d9-eeb2f75a2f91.png)
+   ![image](https://user-images.githubusercontent.com/76239146/184896203-3c68c3bc-ad1d-40c3-8ff9-a02f3f466bfd.png)
  
 ## Main Functions :
 1. find_blobs function ( OpenMV)
