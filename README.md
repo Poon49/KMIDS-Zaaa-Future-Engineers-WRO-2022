@@ -93,22 +93,7 @@ If Area-Wall Left < Area-Wall Right --> Control vehicle turn left.
 1. find_blobs function ( OpenMV)
 2. IMU function (Gyroscope)
 3. PD Control
-
-## 1. find_blobs Function
- This Function is to find the specified colour block in the image and use thresholds for identify  the threshold of colour After that ROI select a range in the image field of view as the area of colour detection after that img.find_blobs
-  
-## 2. IMU function (Gyroscope)  
-Turn direction to be decision by IMU of Gyroscope.
-
- ### Euler Orientation:
- ![image](https://user-images.githubusercontent.com/76239146/184884580-66079145-2229-4a23-8770-935cd3511b30.png)
- 
-  error = heading-imu_x
-  imu_x = degree reading from sensor
-  
- ![image](https://user-images.githubusercontent.com/76239146/184884792-dd52c6ca-319b-4ade-b3c6-0b452e14945f.png)
- 
- Error value for adjust speed Servo motor for run to the target value, 
+ speed Servo motor for run to the target value, 
  speed of  Servo motor depends on error value.
 
 ## 3. PD Control 
