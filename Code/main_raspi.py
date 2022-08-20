@@ -148,19 +148,7 @@ def imuInvertTurn(heading,kp):
     global LastTimeImu
     global servoPin
     global lastSteering
-    kd = 0.1
-    error = heading-imu_x
-    if(error > 180):
-        error =  error-360
-    elif(error < -180):
-        error =  360+error
-    CurrentTime = (time.time()*1000)
-    rateError = (error-LastErrorImu)/(CurrentTime - LastTimeImu) 
-    LastErrorImu = error
-    LastTimeImu = CurrentTime
-    PD = int((kp*error) + (kd*rateError))
-    #print("heading ",heading ," error ",error," PD ",PD," imuX ",imu_x)
-    pulseServo = midServo-PD
+   
     if(pulseServo>maxServo):
         pulseServo = maxServo
     if(pulseServo<minServo):
