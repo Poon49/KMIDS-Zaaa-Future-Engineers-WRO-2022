@@ -1,1 +1,333 @@
+import time
+import serial
+import RPi.GPIO as GPIO
+import cv2 as cv
+import numpy as np
+import time
+import threading
+from bno import BNO055
+import wiringpi
 
+servoPin = 13
+wiringpi.wiringPiSetupGpio()
+wiringpi.pinMode(servoPin, wiringpi.GPIO.PWM_OUTPUT)
+wiringpi.pwmSetMode(wiringpi.GPIO.PWM_MODE_MS)
+wiringpi.pwmSetClock(192)
+wiringpi.pwmSetRange(2000)
+maxServo = 170
+midServo = 135
+minServo = 100
+
+wiringpi.pwmWrite(servoPin, midServo)
+
+LastError = 0
+
+LastTime = time.time()*1000
+
+imu_x = int(0)
+
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(12,GPIO.OUT)
+#GPIO.setup(18,GPIO.OUT)
+f=GPIO.PWM(12,100)
+#f=GPIO.PWM(18,100)
+f.start(0) 
+#b.start(0)
+speedMotor = 70
+s = 50
+
+greenDetect = 0
+redDetect = 0
+turning = 0
+clockwise = 0
+front_wall_detect = 0
+wall_error = 0
+
+LastErrorImu = 0
+LastTimeImu = 0
+LastErrorWall = 0
+LastTimeWall = 0
+
+steps = 1
+laps = 0
+counterDegree = 0
+first_read = True
+def motorDrive(speeds):
+    global s
+    if s > speeds:
+        s -= 5
+    elif s < speeds:
+        s += 5
+    if abs(s-speeds)<10:
+        s = speeds
+    if s>100:
+        s = 100
+    elif s<0:
+        s = 0
+    print(s)
+    f.ChangeDutyCycle(s)
+
+def imuReading(event):
+    global imu_x
+    bno = BNO055(BNO055.OPERATION_MODE_IMUPLUS)
+    if bno.begin() is not True:
+        print("Error initializing device")
+        exit()
+    time.sleep(1)
+    bno.setExternalCrystalUse(True)
+    while not event.is_set():
+        imu_x,y,z = bno.getVector(BNO055.VECTOR_EULER)
+        #print("x ",imu_x," y ",y," z ",z)
+        time.sleep(0.04)
+def findErrorImu(heading):
+    error = heading-imu_x
+    if(error > 180):
+        error =  error-360
+    elif(error < -180):
+        error =  360+error
+    return error
+def imuTurn(heading,kp):
+    global imu_x
+    global LastErrorImu
+    global LastTimeImu
+    global servoPin
+    kd = 0.1
+    error = heading-imu_x
+    if(error > 180):
+        error =  error-360
+    elif(error < -180):
+        error =  360+error
+ 
+
+    CurrentTime = (time.time()*1000)
+
+    rateError = (error-LastErrorImu)/(CurrentTime - LastTimeImu) 
+    LastErrorImu = error
+    LastTimeImu = CurrentTime
+    PD = int((kp*error) + (kd*rateError))
+    #print("heading ",heading ," error ",error," PD ",PD," imuX ",imu_x)
+    pulseServo = midServo+PD
+    if(pulseServo>maxServo):
+        pulseServo = maxServo
+    if(pulseServo<minServo):
+        pulseServo = minServo
+    wiringpi.pwmWrite(servoPin, pulseServo)
+
+inputString = ""
+ser = serial.Serial(
+        port='/dev/ttyUSB0',
+        baudrate = 115200,
+        parity=serial.PARITY_NONE,
+        stopbits=serial.STOPBITS_ONE,
+        bytesize=serial.EIGHTBITS,
+        timeout=0.1
+)
+
+def subString():
+    global inputString 
+    global greenDetect
+    global redDetect
+    global turning
+    global clockwise
+    global front_wall_detect
+    global wall_error
+    global first_read
+    if inputString[0:2] == "#W":
+        commandLength = 6
+        commaIndex = [0] * commandLength 
+        valueTemp = [0] * commandLength 
+        #--------------------------
+        commaIndex[0] = inputString.index(',') 
+        valueTemp[0] = int(inputString[2: commaIndex[0]]) 
+        greenDetect = valueTemp[0]
+        redDetect = valueTemp[1]
+        turning = valueTemp[2]
+        clockwise = valueTemp[3] #0 not detect, 1 clockwise , 2 anti clockwise
+        front_wall_detect = valueTemp[4]
+        wall_error = valueTemp[5]
+        if first_read == True:
+            first_read = False
+    inputString = ""
+
+def UARTReading(event) :
+    global inputString
+    while not event.is_set():
+        if(ser.in_waiting):
+                data = (ser.read())
+                if data == b'#':
+                        inputString = "#"
+                else:
+                        inputString = inputString + data.decode()
+                if(data == b'*'):
+                        data = ''
+                        subString()
+
+def headingWall(headError):
+    global LastErrorWall
+    global LastTimeWall
+    global servoPin
+    kd = 0.001
+    kp = 0.06
+    error = headError
+    CurrentTime = (time.time()*1000)
+    rateError = (error-LastErrorWall)/(CurrentTime - LastTimeWall) 
+    LastErrorWall = error
+    LastTimeWall = CurrentTime
+    PD = int((kp*error) + (kd*rateError))
+    
+    pulseServo = midServo+PD
+    if(pulseServo>maxServo-20):
+        pulseServo = maxServo
+    if(pulseServo<minServo+20):
+        pulseServo = minServo
+    #print("heading ",error ," PD ",PD, "pulse ", pulseServo)
+    wiringpi.pwmWrite(servoPin, pulseServo)
+
+def controller(event):
+    global greenDetect
+    global redDetect
+    global turning
+    global clockwise
+    global front_wall_detect
+    global wall_error
+
+    global steps
+    global laps
+    global counterDegree
+    global first_read
+
+    global midServo
+    global minServo
+    global maxServo
+    speedMotor = 70
+    while first_read or clockwise != 0:
+        print("UART connect....")
+        ser.write('#'.encode())
+        time.sleep(0.5)
+        
+        
+    print("Are you ready!")
+    f.ChangeDutyCycle(speedMotor)
+    lastStepTime = 0
+    lastStep1Time = time.time()*1000
+    turnTime = time.time()*1000
+    lastServo = 0
+    while not event.is_set():
+        if turning and steps == 1 and (time.time()*1000-lastStepTime > 5000):
+            steps = 2
+            print("step = 2")
+            f.ChangeDutyCycle(speedMotor-10)
+            
+            #time.sleep(1)
+            #f.ChangeDutyCycle(60)
+            turnTime = time.time()*1000
+        
+        if steps == 1 and laps != 12:
+            
+            if(abs(findErrorImu(counterDegree))>70):
+                imuTurn(counterDegree,0.9)
+            if(greenDetect):
+                wiringpi.pwmWrite(servoPin, minServo+5)
+                time.sleep(0.1)
+                lastStep1Time = time.time()*1000
+                lastServo = -1
+                
+            elif(redDetect):
+                wiringpi.pwmWrite(servoPin, maxServo-5)
+                time.sleep(0.1)
+                lastStep1Time = time.time()*1000
+                lastServo = 1
+            else:
+                if(time.time()*1000-lastStep1Time<10):
+                    print("turnnn")
+                elif(time.time()*1000-lastStep1Time<500):
+                    print("straing")
+                    wiringpi.pwmWrite(servoPin, midServo)
+                elif(time.time()*1000-lastStep1Time<800):
+                    if lastServo ==- 1:
+                        wiringpi.pwmWrite(servoPin, maxServo-5)
+                    else:
+                        wiringpi.pwmWrite(servoPin, minServo+5)
+                else:
+                    headingWall(wall_error) 
+                    #imuTurn(counterDegree,0.4) 
+        
+        elif steps == 2 :
+            if clockwise == 1:#blue
+                    wiringpi.pwmWrite(servoPin, minServo)
+            elif clockwise == 2:#orange
+                    wiringpi.pwmWrite(servoPin, maxServo)
+            #imuTurn(counterDegree) 
+            if time.time()*1000 - turnTime > 1100:
+                if clockwise == 2:
+                    laps += 1
+                    print("blue")#2
+                    print("laps = ",laps)
+                    steps = 3
+                    counterDegree = counterDegree - 90
+                    if counterDegree < 0:
+                        counterDegree = 270
+                elif clockwise == 1:
+                    laps += 1
+                    print("orange")#1
+                    print("laps = ",laps)
+                    steps = 3
+                    counterDegree = counterDegree + 90
+                    if counterDegree > 359:
+                        counterDegree = 0   
+                print("degree = ",counterDegree)
+                
+                f.ChangeDutyCycle(speedMotor-10) 
+                print("step = 3")
+        elif steps == 3:
+            if(greenDetect):
+                wiringpi.pwmWrite(servoPin, minServo)
+                time.sleep(0.1)
+                lastStep1Time = time.time()*1000
+                lastServo = -1
+            elif(redDetect):
+                wiringpi.pwmWrite(servoPin, maxServo)
+                time.sleep(0.1)
+                lastStep1Time = time.time()*1000
+                lastServo = 1
+            else:
+                if(time.time()*1000-lastStep1Time<10):
+                    print("turnnn")
+                elif(time.time()*1000-lastStep1Time<600):
+                    print("straing3")
+                    wiringpi.pwmWrite(servoPin, midServo)
+                elif(time.time()*1000-lastStep1Time<800):
+                    if lastServo ==- 1:
+                        wiringpi.pwmWrite(servoPin, maxServo-5)
+                    else:
+                        wiringpi.pwmWrite(servoPin, minServo+5)
+                else:
+                    imuTurn(counterDegree,0.9) 
+            if abs(imu_x-counterDegree)<15:
+                steps = 1
+                print("steps = 1")
+                f.ChangeDutyCycle(speedMotor)
+                lastStepTime = time.time()*1000
+
+    print("Kill programe")
+if __name__ == '__main__':
+    #threading.Thread(target = controller).start()
+    #threading.Thread(target = UARTReading).start()
+    #threading.Thread(target = imuReading).start()
+    try:
+        event = threading.Event()
+        thread1 = threading.Thread(target=controller, args=(event,))
+        thread2 = threading.Thread(target=UARTReading, args=(event,))
+        thread3 = threading.Thread(target=imuReading, args=(event,))
+        thread1.start()
+        thread2.start()
+        thread3.start()
+        event.wait()  # wait forever but without blocking KeyboardInterrupt exceptions
+    except KeyboardInterrupt:
+        time.sleep(0.5)
+        f.stop()
+        wiringpi.pwmWrite(servoPin, midServo)
+        GPIO.cleanup()
+        print("cleanup")
+        event.set()  # inform the child thread that it should exit
